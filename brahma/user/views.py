@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from user.models import CustomUser
 from user.serializers import AuthenticationSerializer
 from user.utils import get_tokens_for_user
-
+from strings import *
 
 class RegistrationAPI(viewsets.ModelViewSet):
     """
@@ -33,7 +33,7 @@ class RegistrationAPI(viewsets.ModelViewSet):
                 ),
             },
         ),
-        responses={201: openapi.Response("User Created!")},
+        responses={201: openapi.Response(REGISTRATION_SUCCESS)},
     )
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -52,7 +52,7 @@ class RegistrationAPI(viewsets.ModelViewSet):
 
         return success_response(
             data=serializer.data,
-            message="User registered successfully!",
+            message=REGISTRATION_SUCCESS,
             extra_data={
                 "token": get_tokens_for_user(user_instance)  # handle jwt token
             },
@@ -79,7 +79,7 @@ class LoginAPIView(APIView):
                 ),
             },
         ),
-        responses={201: openapi.Response("Login Success!")},
+        responses={201: openapi.Response(LOGIN_SUCCESS)},
     )
     @transaction.atomic
     def post(self, request):
@@ -109,7 +109,7 @@ class LoginAPIView(APIView):
             )
         else:
             return error_response(
-                message="Authentication failed! Invalid email or password."
+                message=AUTHENTICATION_FAILED
             )
 
 
@@ -122,7 +122,7 @@ class LogoutAPIView(APIView):
 
     @swagger_auto_schema(
         operation_description="This API logs out a user from the system.",
-        responses={201: "User logged out successfully."},
+        responses={201: LOGOUT_SUCCESS},
     )
     @transaction.atomic
     def post(self, request):
@@ -131,4 +131,4 @@ class LogoutAPIView(APIView):
         Ends the user session and returns a success response.
         """
         logout(request)
-        return success_response(message="Logout successful!")
+        return success_response(message=LOGOUT_SUCCESS)
