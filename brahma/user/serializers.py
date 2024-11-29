@@ -9,7 +9,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "email",
-            "password"
+            "password",
+            "role"
         )
 
         read_only_fields = ("id",)
@@ -34,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "profile_picture",
+            "role",
         )
 
         read_only_fields = ("id",)
