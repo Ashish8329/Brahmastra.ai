@@ -5,8 +5,7 @@ from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.db.models import Q, UniqueConstraint
 from django.utils.translation import gettext_lazy as _
-
-# Create your models here.
+from base.choices import RoleType
 
 
 class CustomUserManager(UserManager):
@@ -28,6 +27,7 @@ class CustomUserManager(UserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("role", RoleType.SUPER_USER.value[0])
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -46,6 +46,11 @@ class CustomUser(AbstractUser, BaseModel):
         help_text="A unique identifier for each user, generated automatically.",
     )
     username = None
+    role = models.CharField(
+        max_length=50,
+        default=RoleType.USER.value[0],
+        choices=[x.value for x in RoleType]
+    )
     first_name = models.CharField(
         max_length=150, blank=True, null=True, verbose_name=_("first_name")
     )

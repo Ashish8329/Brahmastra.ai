@@ -7,18 +7,22 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, viewsets
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from user.models import CustomUser
-from user.serializers import AuthenticationSerializer
+from user.serializers import UserSerializer, RegistrationSerializer
 from user.utils import get_tokens_for_user
+from strings import *
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.utils import timezone
+
 
 
 class RegistrationAPI(viewsets.ModelViewSet):
     """
     API View for user registration in the system.
     """
-
-    serializer_class = AuthenticationSerializer
+    serializer_class = RegistrationSerializer
+    permission_classes = (AllowAny,)
 
     @swagger_auto_schema(
         operation_description="This API registers a user in the system.",
@@ -33,7 +37,7 @@ class RegistrationAPI(viewsets.ModelViewSet):
                 ),
             },
         ),
-        responses={201: openapi.Response("User Created!")},
+        responses={201: openapi.Response(REGISTRATION_SUCCESS)},
     )
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -52,19 +56,22 @@ class RegistrationAPI(viewsets.ModelViewSet):
 
         return success_response(
             data=serializer.data,
-            message="User registered successfully!",
+            message=REGISTRATION_SUCCESS,
             extra_data={
                 "token": get_tokens_for_user(user_instance)  # handle jwt token
             },
         )
 
 
-class LoginAPIView(APIView):
+class LoginAPIView(viewsets.ModelViewSet):
     """
     API View for user authentication and login.
 
     Authenticates a user using email and password and logs them into the system.
     """
+    serializer_class = RegistrationSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = (AllowAny,)
 
     @swagger_auto_schema(
         operation_description="This API authenticates and logs in a user.",
@@ -79,10 +86,10 @@ class LoginAPIView(APIView):
                 ),
             },
         ),
-        responses={201: openapi.Response("Login Success!")},
+        responses={201: openapi.Response(LOGIN_SUCCESS)},
     )
     @transaction.atomic
-    def post(self, request):
+    def create(self, request, *args, **kwargs):
         """
         Handle user login.
 
@@ -101,15 +108,20 @@ class LoginAPIView(APIView):
 
         if authenticated_user is not None:
             login(request, authenticated_user)
+
+            # Serialize user data
+            user_data = UserSerializer(authenticated_user).data
+
             return success_response(
-                message="Login successful!",
+                message=LOGIN_SUCCESS,
+                data=user_data,
                 extra_data={
-                    "token": get_tokens_for_user(authenticated_user)  # handle jwt token
+                    "token":  get_tokens_for_user(authenticated_user)  # handle jwt token
                 },
             )
         else:
             return error_response(
-                message="Authentication failed! Invalid email or password."
+                message=AUTHENTICATION_FAILED
             )
 
 
@@ -119,16 +131,13 @@ class LogoutAPIView(APIView):
 
     Logs out a user from the system and invalidates their session.
     """
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description="This API logs out a user from the system.",
-        responses={201: "User logged out successfully."},
+        responses={201: LOGOUT_SUCCESS},
     )
     @transaction.atomic
     def post(self, request):
-        """
-        Handle user logout.
-        Ends the user session and returns a success response.
-        """
         logout(request)
-        return success_response(message="Logout successful!")
+        return success_response(message=LOGOUT_SUCCESS)

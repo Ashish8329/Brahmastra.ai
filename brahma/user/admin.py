@@ -18,5 +18,6 @@ class CustomUserAdmin(BaseAdmin):
         "birth_date",
         "created_at",
         "updated_at",
+        "role"
     ]
     list_display = ("id", "email", "created_at", "updated_at")
